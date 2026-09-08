@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MADO Control Panel</title>
+<style>
+body{background:#0f0f0f;color:#fff;font-family:system-ui;padding:20px}
+.card{background:#1a1a1a;border-radius:12px;padding:20px;margin:10px 0}
+.online{color:#00ff88} .offline{color:#ff4444}
+button{background:#7c3aed;color:white;border:0;padding:8px 14px;border-radius:8px;cursor:pointer;margin:3px}
+h1{color:#a78bfa}
+</style>
+</head>
+<body>
+<h1>🔥 MADO Server - Netlify</h1>
+<div class="card">
+<h3>حالة السيرفر: <span id="status">جاري التحقق...</span></h3>
+<p>الرابط ده هو اللي هتحطه في البرنامج: <b id="apiurl"></b></p>
+</div>
+<div class="card">
+<h3>المستخدمين: <span id="total">0</span> | اونلاين: <span id="online" class="online">0</span></h3>
+<div id="users"></div>
+</div>
+<script>
+const base = window.location.origin;
+document.getElementById('apiurl').innerText = base;
+async function load(){
+ try{
+  let r = await fetch('/api/admin/stats'); let s = await r.json();
+  document.getElementById('total').innerText = s.total;
+  document.getElementById('online').innerText = s.online;
+  document.getElementById('status').innerHTML = '<span class=online>شغال ✅</span>';
+  let r2 = await fetch('/api/admin/users'); let users = await r2.json();
+  let html='';
+  users.forEach(u=>{
+    html+=`<div class=card style="display:flex;justify-content:space-between;align-items:center">
+      <div><b>${u.hwid}</b><br><small>${u.name||''} - ${u.last_seen_ago} - <span class=${u.is_online?'online':'offline'}>${u.is_online?'اونلاين':'اوفلاين'}</span></small></div>
+      <div>
+        <button onclick="stopUser('${u.hwid}')">ايقاف</button>
+        <button onclick="toggleUser('${u.hwid}')">${u.enabled?'حظر':'فك'}</button>
+      </div>
+    </div>`
+  });
+  document.getElementById('users').innerHTML = html || 'لا يوجد مستخدمين بعد';
+ }catch(e){ document.getElementById('status').innerText='فيه مشكلة: '+e}
+}
+async function stopUser(hwid){ await fetch('/api/admin/user/'+hwid+'/stop',{method:'POST'}); load(); }
+async function toggleUser(hwid){ await fetch('/api/admin/user/'+hwid+'/toggle',{method:'POST'}); load(); }
+load(); setInterval(load,5000);
+</script>
+</body>
+</html>
